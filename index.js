@@ -25,6 +25,7 @@ let persons = [
   },
 ];
 
+// Middleware
 app.use(express.json());
 
 morgan.token("data", (req) => {
@@ -35,7 +36,10 @@ morgan.token("data", (req) => {
 app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :data")
 );
+// Show static pages
+app.use(express.static("dist"));
 
+// Routes
 app.get("/info", (request, response) => {
   response.send(`<p>Phonebook has info for ${persons.length} people.</p>
     <p>${new Date()}</p>`);
