@@ -1,29 +1,34 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
+const Person = require("./models/person");
+
 const app = express();
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: "1",
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: "2",
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: "3",
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: "4",
-  },
-];
+// const url = `mongodb+srv://heikki:${password}@cluster0.hskrx.mongodb.net/personApp?retryWrites=true&w=majority&appName=Cluster0`;
+
+// let persons = [
+//   {
+//     name: "Arto Hellas",
+//     number: "040-123456",
+//     id: "1",
+//   },
+//   {
+//     name: "Ada Lovelace",
+//     number: "39-44-5323523",
+//     id: "2",
+//   },
+//   {
+//     name: "Dan Abramov",
+//     number: "12-43-234345",
+//     id: "3",
+//   },
+//   {
+//     name: "Mary Poppendieck",
+//     number: "39-23-6423122",
+//     id: "4",
+//   },
+// ];
 
 // Middleware
 app.use(express.json());
@@ -46,7 +51,9 @@ app.get("/info", (request, response) => {
 });
 
 app.get("/api/persons", (request, response) => {
-  response.json(persons);
+  Person.find({}).then((persons) => {
+    response.json(persons);
+  });
 });
 
 const generateId = () => {
@@ -68,30 +75,37 @@ app.post("/api/persons", (request, response) => {
       error: "number missing",
     });
   }
-  const foundPerson = persons.find((person) => person.name === body.name);
-  if (foundPerson) {
-    return response.status(409).json({ error: "name must be unique" });
-  }
 
-  const person = {
+  // const foundPerson = persons.find((person) => person.name === body.name);
+  // if (foundPerson) {
+  //   return response.status(409).json({ error: "name must be unique" });
+  // }
+
+  // New Person by using Person contructor
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+    // id: generateId(),
+  });
 
-  persons = persons.concat(person);
-  response.json(person);
+  // Save to db -> http response (toJSON formatted) if succeeded
+  person.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = persons.find((person) => person.id === id);
-  if (person) {
+  // const id = request.params.id;
+  // const person = persons.find((person) => person.id === id);
+  // if (person) {
+  //   response.json(person);
+  // } else {
+  //   console.log("x");
+  //   response.status(404).end();
+  // }
+  Person.findById(request.params.id).then((person) => {
     response.json(person);
-  } else {
-    console.log("x");
-    response.status(404).end();
-  }
+  });
 });
 
 app.delete("/api/persons/:id", (request, response) => {
@@ -101,7 +115,7 @@ app.delete("/api/persons/:id", (request, response) => {
   response.status(204).end();
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
