@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 // const morgan = require("morgan");
-const Person = require("./models/person");
+const Person = require("./models/person"); // Person-konstruktorifunktio
 
 const app = express();
 
@@ -43,6 +43,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
 
   next(error);
@@ -101,25 +103,8 @@ app.get("/api/persons/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body;
-
-  if (!body.name) {
-    return response.status(400).json({
-      error: "name missing",
-    });
-  }
-
-  if (!body.number) {
-    return response.status(400).json({
-      error: "number missing",
-    });
-  }
-
-  // const foundPerson = persons.find((person) => person.name === body.name);
-  // if (foundPerson) {
-  //   return response.status(409).json({ error: "name must be unique" });
-  // }
 
   // New Person by using Person contructor
   const person = new Person({
@@ -129,9 +114,12 @@ app.post("/api/persons", (request, response) => {
   });
 
   // Save to db -> http response (toJSON formatted) if succeeded
-  person.save().then((savedPerson) => {
-    response.json(savedPerson);
-  });
+  person
+    .save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    })
+    .catch((error) => next(error));
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
